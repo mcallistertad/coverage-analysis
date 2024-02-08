@@ -46,7 +46,6 @@ def get_rgb_values(pixel_location, src):
     red_value = red_band[pixel_location[0], pixel_location[1]]
     green_value = green_band[pixel_location[0], pixel_location[1]]
     blue_value = blue_band[pixel_location[0], pixel_location[1]]
-    print(red_value,green_value,blue_value)
     return red_value, green_value, blue_value
 
 def get_closest_rgb(pixel_rgb):
