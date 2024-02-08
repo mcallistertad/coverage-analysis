@@ -51,7 +51,7 @@ def get_rgb_values(pixel_location, src):
 def get_closest_rgb(pixel_rgb):
     """Find closest RGB value from known RGBs"""
     if pixel_rgb == NO_COVERAGE:
-        return None  # Return None for white, indicating no coverage or undefined RSRP value
+        return 0  # Return 0 for white, indicating no coverage or undefined RSRP value
 
     return min(RGB_TO_DBM.keys(), key=lambda x: sum((a-b)**2 for a, b in zip(x, pixel_rgb)))
 
@@ -89,24 +89,20 @@ def get_coverage_level(coordinates, src, interpolation=None):
         # Find the closest RGB match
         closest_rgb = get_closest_rgb(pixel_rgb)
 
-        # If closest_rgb is None, return None indicating no coverage or undefined RSRP
-        if closest_rgb is None:
-            return None
-
         closest_rsrp = RGB_TO_DBM.get(closest_rgb, MIN_COVERAGE)
 
         if closest_rsrp == MAX_COVERAGE:
             return MAX_COVERAGE
 
         if closest_rsrp < MIN_COVERAGE:
-            return 0  # Classify values below MIN_COVERAGE as 0
+            return MIN_COVERAGE
 
         if interpolation:
             # Interpolate RSRP value between closest and next closest RSRP values
             min_rsrp = MAX_COVERAGE if closest_rsrp == MIN_COVERAGE else closest_rsrp
             max_rsrp = MIN_COVERAGE
             for rsrp in sorted(RGB_TO_DBM.values()):
-                if min_rsrp < rsrp < MAX_COVERAGE:
+                if min_rsrp < rsrp < closest_rsrp:
                     max_rsrp = rsrp
                     break
             interpolated_rsrp = interpolate_rsrp_value(min_rsrp, max_rsrp, RGB_TO_DBM[closest_rgb], max_rsrp, closest_rsrp, method=interpolation)
@@ -129,6 +125,8 @@ def process_row(row, src):
         coverage_level = get_coverage_level(",".join(coordinates), src)
         if coverage_level is not None:
             return coordinates + [coverage_level]
+        else:
+            return coordinates + ["NO_COVERAGE"]  # Special string to indicate no coverage
     except ValueError:
         pass  # Skip processing if coordinates are not valid floats
     except Exception as e:
@@ -140,8 +138,8 @@ def write_batch(rows, csv_writer):
     for row in rows:
         if row is None:  # Check if row is None
             csv_writer.writerow(["Null"] * 3)  # Write "Null" for all columns
-        elif row[2] == "Null":
-            csv_writer.writerow(row[:2] + ["Null"])  # Write "Null" directly
+        elif row[2] == "NO_COVERAGE":  # Check if coverage level is NO_COVERAGE
+            csv_writer.writerow(row[:2] + ["Null"])  # Write "Null" for the RSRP column
         else:
             try:
                 csv_writer.writerow(row[:2] + [int(row[2])])  # Format RSRP as integer
