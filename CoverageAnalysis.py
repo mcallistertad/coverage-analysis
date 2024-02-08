@@ -20,11 +20,13 @@ BATCH_SIZE = 20
 
 # Define RGB to dBm mapping
 RGB_TO_DBM = {
-    (207, 99, 103): -80,
-    (234, 104, 102): -90,
-    (243, 172, 103): -100,
-    (248, 209, 191): -108
+    (203, 107, 107): -80,
+    (249, 128, 122): -90,
+    (250, 186, 122): -100,
+    (250, 218, 202): -108
 }
+
+NO_COVERAGE = (247, 247, 247)
 
 def transform_coordinates(coordinates, src_crs):
     """Transform latitude and longitude to raster file coordinate system"""
@@ -44,11 +46,12 @@ def get_rgb_values(pixel_location, src):
     red_value = red_band[pixel_location[0], pixel_location[1]]
     green_value = green_band[pixel_location[0], pixel_location[1]]
     blue_value = blue_band[pixel_location[0], pixel_location[1]]
+    print(red_value,green_value,blue_value)
     return red_value, green_value, blue_value
 
 def get_closest_rgb(pixel_rgb):
     """Find closest RGB value from known RGBs"""
-    if pixel_rgb == (255, 255, 255):
+    if pixel_rgb == NO_COVERAGE:
         return None  # Return None for white, indicating no coverage or undefined RSRP value
 
     return min(RGB_TO_DBM.keys(), key=lambda x: sum((a-b)**2 for a, b in zip(x, pixel_rgb)))
@@ -80,6 +83,7 @@ def get_coverage_level(coordinates, src, interpolation=None):
         # Get RGB values at specified location
         pixel_rgb = get_rgb_values(pixel_location, src)
 
+        # If 
         if pixel_rgb == (255, 255, 255):
             return None
 
@@ -94,6 +98,9 @@ def get_coverage_level(coordinates, src, interpolation=None):
 
         if closest_rsrp == MAX_COVERAGE:
             return MAX_COVERAGE
+
+        if closest_rsrp < MIN_COVERAGE:
+            return 0  # Classify values below MIN_COVERAGE as 0
 
         if interpolation:
             # Interpolate RSRP value between closest and next closest RSRP values
