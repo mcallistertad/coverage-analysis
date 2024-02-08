@@ -1,4 +1,4 @@
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 __maintainer__ = "Tad McAllister"
 __email__ = "thaddeus.mcallister@vodafone.com"
 __status__ = "test"
@@ -14,6 +14,7 @@ from tqdm import tqdm
 # Define lowest and highest coverage levels
 MIN_COVERAGE = -108
 MAX_COVERAGE = -80
+NO_COVERAGE = 0
 
 # CSV processing
 BATCH_SIZE = 20
@@ -26,7 +27,7 @@ RGB_TO_DBM = {
     (250, 218, 202): -108
 }
 
-NO_COVERAGE = (247, 247, 247)
+RGB_NO_COVERAGE = (247, 247, 247)
 
 def transform_coordinates(coordinates, src_crs):
     """Transform latitude and longitude to raster file coordinate system"""
@@ -50,8 +51,8 @@ def get_rgb_values(pixel_location, src):
 
 def get_closest_rgb(pixel_rgb):
     """Find closest RGB value from known RGBs"""
-    if pixel_rgb == NO_COVERAGE:
-        return 0  # Return 0 for white, indicating no coverage or undefined RSRP value
+    if pixel_rgb == RGB_NO_COVERAGE:
+        return NO_COVERAGE  # Return 0 for white, indicating no coverage or undefined RSRP value
 
     return min(RGB_TO_DBM.keys(), key=lambda x: sum((a-b)**2 for a, b in zip(x, pixel_rgb)))
 
@@ -139,7 +140,7 @@ def write_batch(rows, csv_writer):
         if row is None:  # Check if row is None
             csv_writer.writerow(["Null"] * 3)  # Write "Null" for all columns
         elif row[2] == "NO_COVERAGE":  # Check if coverage level is NO_COVERAGE
-            csv_writer.writerow(row[:2] + ["Null"])  # Write "Null" for the RSRP column
+            csv_writer.writerow(row[:2] + ["None"])  # Write "None" for the RSRP column
         else:
             try:
                 csv_writer.writerow(row[:2] + [int(row[2])])  # Format RSRP as integer
