@@ -12,7 +12,7 @@ pip3 install -r requirements. txt
 
 ## Usage
 
-```python
+```bash
 # returns single set of coordinates
 python program_name.py --geotiff path_to_geotiff_file --coordinates "latitude,longitude"
 
